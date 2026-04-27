@@ -1,7 +1,7 @@
 import { getContext } from "@/lib/context";
 import { db } from "@/lib/db";
-import { chats, messages } from "@/lib/db/schema";
-import { convertToModelMessages, streamText, UIMessage } from 'ai';
+import { chats } from "@/lib/db/schema";
+import { convertToModelMessages, ModelMessage, streamText, UIMessage } from 'ai';
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import {openai} from "@ai-sdk/openai"
@@ -13,30 +13,53 @@ import {openai} from "@ai-sdk/openai"
 //     }
 // );
 
-const apiKey = process.env.AI_GATEWAY_API_KEY;
 // const client = new Mistral({apiKey:apiKey});
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
+type ChatRequestBody = {
+    messages?: UIMessage[]
+    chatId?: number | string
+}
+
+function getTextFromMessage(message: UIMessage) {
+    return message.parts
+        .map((part) => part.type === "text" ? part.text : "")
+        .join("")
+        .trim()
+}
+
 export async function POST(req: Request) {
-    const { messages, chatId } = await req.json();
-    // console.log("Messages: ", messages);
-    let lastMessage
-    let convertedMessages : any[] = []
-    if (messages && Array.isArray(messages)) {
-        convertedMessages = messages.map((msg: any) => ({
-            role: msg.role,
-            content: msg.content || (msg.parts ? 
-                msg.parts.map((p: any) => p.text).join('') : '')
-        }));
-        
-        const lastMsg = convertedMessages[convertedMessages.length - 1];
-        lastMessage = lastMsg.content;
+    const { messages, chatId } = await req.json() as ChatRequestBody;
+    const parsedChatId = Number(chatId)
+
+    if (!Number.isInteger(parsedChatId)) {
+        return NextResponse.json(
+            { error: "invalid chat id" },
+            { status: 400 }
+        )
+    }
+
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+        return NextResponse.json(
+            { error: "message is required" },
+            { status: 400 }
+        )
+    }
+
+    const convertedMessages = convertToModelMessages(messages)
+    const lastMessageText = getTextFromMessage(messages[messages.length - 1])
+
+    if (!lastMessageText) {
+        return NextResponse.json(
+            { error: "message text is required" },
+            { status: 400 }
+        )
     }
     
     try{
-        let chatData = await db.select().from(chats).where(eq(chats.id, chatId))
+        const chatData = await db.select().from(chats).where(eq(chats.id, parsedChatId))
         if (chatData.length!=1) {
             return NextResponse.json(
                 {
@@ -47,10 +70,10 @@ export async function POST(req: Request) {
                 }
             )
         }
-        let file_key = chatData[0].fileKey
-        let context = await getContext(lastMessage.content,file_key)
+        const file_key = chatData[0].fileKey
+        const context = await getContext(lastMessageText,file_key)
 
-        const promptMessage = {
+        const promptMessage: ModelMessage = {
             role : "system",
             content: `AI assistant is a brand new, powerful, human-like artificial intelligence.
                     The traits of AI include expert knowledge, helpfulness, cleverness, and articulateness.

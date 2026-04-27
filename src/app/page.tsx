@@ -11,11 +11,11 @@ import { ArrowRight } from "lucide-react";
 export default async function Home() {
   const {userId} = await auth()
   const isAuth = !!userId
-  let userChats
+  let userChats = null
   if (userId) {
-      userChats = await db.select().from(chats).where(eq(chats.userId,userId))
-      if (userChats) {
-        userChats = userChats[0]
+      const userChatList = await db.select().from(chats).where(eq(chats.userId,userId))
+      if (userChatList && userChatList.length > 0) {
+        userChats = userChatList[0]
       }
   }
   return (

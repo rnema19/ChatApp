@@ -15,7 +15,7 @@ export async function getMatchesFromEmbeddings(embeddings:number[], file_key : s
         const namespace = convertTOAscii(file_key)
 
         const queryIndex = await pineconeIndex.namespace(namespace).query({
-            topK : 5,
+            topK : 8,
             vector : embeddings,
             includeMetadata : true,
         })
@@ -27,19 +27,21 @@ export async function getMatchesFromEmbeddings(embeddings:number[], file_key : s
 }
 
 export async function getContext(query:string, file_key : string) {
-    let queryEmbeddingsResponse = await getEmbeddings(query)
+    const queryEmbeddingsResponse = await getEmbeddings(query)
     if (!queryEmbeddingsResponse || !Array.isArray(queryEmbeddingsResponse)) {
         throw new Error("Failed to generate embeddings for query");
     }
     // Extract the actual array of embeddings from the response
     const queryEmbeddings = queryEmbeddingsResponse
-    let matches = await getMatchesFromEmbeddings(queryEmbeddings,file_key)
-    let qualifyingDocs = matches.filter(match => {
-        // considering 70% matching above
-        return match.score && match.score > 0.7
+    const matches = await getMatchesFromEmbeddings(queryEmbeddings,file_key)
+    const qualifyingDocs = matches.filter(match => {
+        return typeof match.score === "number" && match.score > 0.2
     })
-    let docs = qualifyingDocs.map(match => {
-        return (match.metadata as Metadata).text
-    })
+
+    const sourceMatches = qualifyingDocs.length > 0 ? qualifyingDocs : matches.slice(0,3)
+    const docs = sourceMatches
+        .map(match => (match.metadata as Metadata | undefined)?.text)
+        .filter((text): text is string => typeof text === "string" && text.trim().length > 0)
+
     return docs.join('\n').substring(0,5000)
 }

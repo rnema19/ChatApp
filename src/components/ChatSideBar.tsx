@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import { chats, DrizzleChat } from '@/lib/db/schema'
+import { DrizzleChat } from '@/lib/db/schema'
 import Link from 'next/link'
 import { Button } from './ui/button'
 import { MessageCircleDashed, PlusCircleIcon } from 'lucide-react'
@@ -27,8 +27,8 @@ const ChatSideBar = ({chats,chatId}: Props) => {
                   <Link key={chat.id} href={`/chat/${chat.id}`}>
                     <div className={cn('rounded-lg p-3 text-slate-400 flex items-center',
                     {
-                        "bg-blue-600 text-white" : chat.id === chatId,
-                        "hover:text-gray-400" : chat.id !== chatId
+                        "bg-blue-600 text-white" : Number(chat.id) === chatId,
+                        "hover:text-gray-400" : Number(chat.id) !== chatId
                     }
                       )}>
                       <MessageCircleDashed className='mr-2 h-5 w-5 flex-shrink-0'/>

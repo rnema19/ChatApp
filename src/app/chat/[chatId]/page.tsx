@@ -4,7 +4,6 @@ import { auth } from '@clerk/nextjs/server'
 import { eq } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import React from 'react'
-import toast from 'react-hot-toast'
 import ChatSideBar from '@/components/ChatSideBar'
 import PDFViewerWrapper from '@/components/PDFViewerWrapper'
 import ChatComponent from '@/components/ChatComponent'
@@ -17,7 +16,13 @@ type Props = {
 
 const ChatPage = async({params}: Props) => {
   const {chatId} = await params
-  console.log("chat id: ", parseInt(chatId));
+  const parsedChatId = Number.parseInt(chatId, 10)
+  console.log("chat id: ", parsedChatId);
+  
+  if (Number.isNaN(parsedChatId)) {
+      console.log("Invalid chat ID!!!")
+      return redirect('/')
+  }
   
   const {userId} = await auth()
   if (!userId) {
@@ -35,26 +40,28 @@ const ChatPage = async({params}: Props) => {
   // return allChats
 
   const currentChat = allChats.find((chat)=>{
-    return chat.id === parseInt(chatId)
-  })!
-  
-  // Extract userId from the current chat
-  const chatUserId = currentChat.userId
-  console.log("User ID from current chat:", chatUserId)
-  console.log("Authenticated user ID:", userId)
+    return Number(chat.id) === parsedChatId
+  })
+  console.log("currentChat: ", currentChat);
 
   if (!currentChat) {
       // toast.error("No chat present with that ID!!!")
       console.log("No chat present with that ID!!!");      
       return redirect('/')
   }
+
+  // Extract userId from the current chat
+  const chatUserId = currentChat.userId
+  console.log("User ID from current chat:", chatUserId)
+  console.log("Authenticated user ID:", userId)
+
   return (
     <div className='flex max-h-screen overflow-scroll'>
       <div className='flex w-full max-h-screen overflow-auto'>
 
         {/* chat sidebar */}
         <div className='flex-2 max-w-sw'>
-          <ChatSideBar chats={allChats} chatId={parseInt(chatId)}/>
+          <ChatSideBar chats={allChats} chatId={parsedChatId}/>
         </div>
 
         {/* pdf viewer */}
@@ -64,7 +71,7 @@ const ChatPage = async({params}: Props) => {
 
         {/* chat Component */}
         <div className='flex-3 border-l-2 border-l-slate-500' >
-          <ChatComponent chatId={parseInt((await params).chatId)}/>
+          <ChatComponent chatId={parsedChatId}/>
         </div>
       </div>
     </div>
