@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "s3:cors": "tsx scripts/configure-s3-cors.ts"
   },
   "dependencies": {
     "@ai-sdk/mistral": "^2.0.17",
@@ -14,6 +15,7 @@
     "@ai-sdk/react": "^2.0.60",
     "@aws-sdk/client-s3": "^3.892.0",
     "@clerk/nextjs": "^6.32.0",
+    "@embedpdf/react-pdf-viewer": "^2.14.4",
     "@google/genai": "^1.21.0",
     "@langchain/community": "^0.3.56",
     "@langchain/core": "^0.3.77",
@@ -55,6 +57,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
     "tailwindcss": "^4",
+    "tsx": "^4.23.0",
     "tw-animate-css": "^1.3.8",
     "typescript": "^5"
   }
