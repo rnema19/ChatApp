@@ -1,37 +1,34 @@
+"use client"
 import React from 'react'
-import { Page, Text, View, Document, StyleSheet, PDFViewer as Viewer } from '@react-pdf/renderer';
+import { Document, Page, pdfjs } from 'react-pdf';
+import { PDFViewer as PDFView} from '@embedpdf/react-pdf-viewer';
 
 type Props = {
     pdfURL : string
 }
 
+
 const PDFViewer = ({pdfURL}: Props) => {
-  return (
-    // /*
-    <iframe
-        // src={`https://docs.google.com/document/${encodeURIComponent(pdfURL)}/view`}
-        src={`https://docs.google.com/viewer?url=${encodeURIComponent(pdfURL)}&embedded=true`}
-        // src={`https://drive.google.com/file/d/${encodeURIComponent(pdfURL)}/view`}
+  const [numPages, setNumPages] = React.useState<number>();
+  const [pageNumber, setPageNumber] = React.useState<number>(1);
 
-        className='w-full h-full'
-        sandbox='allow-scripts allow-same-origin allow-popups'
-    >    
-    </iframe>
-    // */
-    /*
-    <object 
-    data={pdfURL}
-    type="application/pdf"
-    className='w-full h-full'
-    >
-        <p>Your browser does not support PDFs. 
-            <a href={pdfURL}>Download the PDF</a>
-        </p>
-    </object>
-    */
+  function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
+    setNumPages(numPages);
+  }
 
-  )
+  console.log("pdfUrl inside PDFViewer: ", pdfURL);
   
+
+  return (
+    <div style={{ height: '100%' }}>
+      <PDFView 
+        config={{
+          src: pdfURL,
+          theme: { preference: 'light' }
+        }}
+      />
+    </div>
+  );
 }
 
 export default PDFViewer
